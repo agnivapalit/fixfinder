@@ -1,0 +1,32 @@
+import express from "express";
+import cors from "cors";
+import morgan from "morgan";
+import dotenv from "dotenv";
+
+import { authRouter } from "../routes/auth.routes.js";
+import { meRouter } from "../routes/me.routes.js";
+
+dotenv.config();
+
+const app = express();
+
+app.use(cors({ origin: true, credentials: true }));
+app.use(express.json({ limit: "2mb" }));
+app.use(morgan("dev"));
+
+app.get("/health", (req, res) => res.json({ ok: true }));
+
+app.use("/auth", authRouter);
+app.use("/me", meRouter);
+
+// Central error handler
+app.use((err, req, res, next) => {
+  console.error(err);
+  const status = err.status || 500;
+  res.status(status).json({
+    error: err.message || "Internal Server Error",
+  });
+});
+
+const port = process.env.PORT || 4000;
+app.listen(port, () => console.log(`API running on http://localhost:${port}`));
