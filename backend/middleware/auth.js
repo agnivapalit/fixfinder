@@ -3,20 +3,22 @@ import { httpError } from "../lib/errors.js";
 
 export function requireAuth(req, res, next) {
   const header = req.headers.authorization || "";
-
-  // Accept "Bearer <token>" (case-insensitive) + trim whitespace
-  const match = header.match(/^Bearer\s+(.+)$/i);
-  const token = match?.[1]?.trim();
-
+  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
   if (!token) return next(httpError(401, "Missing token"));
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = payload;
+    req.user = payload; // { sub, role }
     next();
-  } catch (e) {
-    // Temporary: surface the real reason
-    console.error("JWT verify failed:", e.message);
-    return next(httpError(401, `Invalid token (${e.message})`));
+  } catch {
+    next(httpError(401, "Invalid token"));
   }
+}
+
+export function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.user) return next(httpError(401, "Unauthorized"));
+    if (!roles.includes(req.user.role)) return next(httpError(403, "Forbidden"));
+    next();
+  };
 }
