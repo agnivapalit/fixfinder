@@ -11,6 +11,7 @@
 
       <div class="flex gap-2">
         <button class="border rounded px-3 py-2" @click="refresh">Refresh</button>
+        <button v-if="auth.user?.role === 'TECHNICIAN'" class="border rounded px-3 py-2" @click="toggleFav"> Toggle favourite </button>
       </div>
     </div>
 
@@ -85,6 +86,7 @@ import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { useAuthStore } from "../stores/auth";
 import { useListingsStore } from "../stores/listings";
+import { useFavouritesStore } from "../stores/favourites";
 
 const route = useRoute();
 const auth = useAuthStore();
@@ -95,6 +97,8 @@ const listingId = route.params.id;
 const priceEuros = ref(15);
 const note = ref("");
 const sort = ref("price_asc");
+
+const favs = useFavouritesStore();
 
 async function refresh() {
   await listings.fetchDetail(listingId);
@@ -111,6 +115,10 @@ async function submitBid() {
 
 async function loadBids() {
   await listings.fetchBids(listingId, sort.value);
+}
+
+async function toggleFav() {
+  await favs.toggle(listingId);
 }
 
 onMounted(refresh);

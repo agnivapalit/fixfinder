@@ -7,6 +7,7 @@ import CreateListingView from "../views/CreateListingView.vue";
 import MyListingsView from "../views/MyListingsView.vue";
 import BrowseListingsView from "../views/BrowseListingsView.vue";
 import ListingDetailsView from "../views/ListingDetailsView.vue";
+import FavouritesView from "../views/FavouritesView.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -43,6 +44,11 @@ const router = createRouter({
       path: "/listing/:id",
       component: ListingDetailsView,
       meta: { requiresAuth: true, roles: ["TECHNICIAN", "CUSTOMER", "ADMIN"] },
+    },
+    {
+      path: "/favourites",
+      component: FavouritesView,
+      meta: { requiresAuth: true, roles: ["TECHNICIAN"] },
     },
   ],
 });
