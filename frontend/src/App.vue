@@ -3,9 +3,16 @@
     <div class="max-w-4xl mx-auto p-4">
       <nav class="flex items-center justify-between py-3">
         <div class="font-semibold">FixFinder</div>
-        <div class="flex gap-3">
+
+        <div class="flex items-center gap-3">
           <RouterLink class="underline" to="/dashboard">Dashboard</RouterLink>
-          <RouterLink class="underline" to="/login">Login</RouterLink>
+
+          <RouterLink v-if="!auth.token" class="underline" to="/login">Login</RouterLink>
+
+          <div v-else class="flex items-center gap-2">
+            <span class="text-sm text-gray-600">{{ auth.user?.email }}</span>
+            <button class="border rounded px-3 py-1" @click="auth.logout()">Logout</button>
+          </div>
         </div>
       </nav>
 
