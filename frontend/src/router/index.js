@@ -5,7 +5,8 @@ import { useAuthStore } from "../stores/auth";
 import PendingApprovalView from "../views/PendingApprovalView.vue";
 import CreateListingView from "../views/CreateListingView.vue";
 import MyListingsView from "../views/MyListingsView.vue";
-import BrowseListingsView from "../views/BrowseListingsView.vue"; 
+import BrowseListingsView from "../views/BrowseListingsView.vue";
+import ListingDetailsView from "../views/ListingDetailsView.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -38,7 +39,11 @@ const router = createRouter({
       component: MyListingsView,
       meta: { requiresAuth: true, roles: ["CUSTOMER"] },
     },
-
+    {
+      path: "/listing/:id",
+      component: ListingDetailsView,
+      meta: { requiresAuth: true, roles: ["TECHNICIAN", "CUSTOMER", "ADMIN"] },
+    },
   ],
 });
 

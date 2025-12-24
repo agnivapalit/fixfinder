@@ -14,6 +14,11 @@ const createListingSchema = z.object({
   imageUrls: z.array(z.string().min(1)).length(3),
 });
 
+const createBidSchema = z.object({
+  priceCents: z.number().int().min(100), // min €1.00 style
+  note: z.string().max(500).optional(),
+});
+
 // Create listing (CUSTOMER only)
 listingsRouter.post(
   "/",
@@ -111,6 +116,99 @@ listingsRouter.get(
       });
 
       res.json({ listings });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+//Create Bid (TECH)
+listingsRouter.post(
+  "/:id/bids",
+  requireAuth,
+  requireRole("TECHNICIAN"),
+  async (req, res, next) => {
+    try {
+      const listingId = req.params.id;
+      const data = createBidSchema.parse(req.body);
+
+      const listing = await prisma.listing.findUnique({ where: { id: listingId } });
+      if (!listing) throw httpError(404, "Listing not found");
+
+      const now = new Date();
+      if (listing.status !== "ACTIVE" || listing.expiresAt <= now) {
+        throw httpError(400, "Listing is not open for bidding");
+      }
+
+      const bid = await prisma.bid.upsert({
+        where: { listingId_technicianId: { listingId, technicianId: req.user.sub } },
+        create: {
+          listingId,
+          technicianId: req.user.sub,
+          priceCents: data.priceCents,
+          note: data.note,
+        },
+        update: {
+          priceCents: data.priceCents,
+          note: data.note,
+        },
+        select: { id: true, priceCents: true, note: true, createdAt: true },
+      });
+
+      res.status(201).json({ bid });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+//List Bids for a post
+listingsRouter.get(
+  "/:id/bids",
+  requireAuth,
+  requireRole("CUSTOMER", "TECHNICIAN", "ADMIN"),
+  async (req, res, next) => {
+    try {
+      const listingId = req.params.id;
+
+      const listing = await prisma.listing.findUnique({
+        where: { id: listingId },
+        select: { customerId: true },
+      });
+      if (!listing) throw httpError(404, "Listing not found");
+
+      const isOwner = req.user.role === "CUSTOMER" && listing.customerId === req.user.sub;
+      const isAdmin = req.user.role === "ADMIN";
+
+      if (!isOwner && !isAdmin && req.user.role !== "TECHNICIAN") {
+        throw httpError(403, "Forbidden");
+      }
+
+      // Sorting: price asc/desc (rating later)
+      const sort = typeof req.query.sort === "string" ? req.query.sort : "price_asc";
+      const orderBy =
+        sort === "price_desc"
+          ? [{ priceCents: "desc" }]
+          : [{ priceCents: "asc" }];
+
+      const where =
+        req.user.role === "TECHNICIAN" && !isAdmin
+          ? { listingId, technicianId: req.user.sub }
+          : { listingId };
+
+      const bids = await prisma.bid.findMany({
+        where,
+        orderBy,
+        select: {
+          id: true,
+          priceCents: true,
+          note: true,
+          createdAt: true,
+          technician: { select: { id: true, email: true } }, // rating later
+        },
+      });
+
+      res.json({ bids });
     } catch (err) {
       next(err);
     }

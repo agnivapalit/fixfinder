@@ -38,6 +38,8 @@ model User {
 
   technicianProfile TechnicianProfile?
   listings          Listing[] @relation("CustomerListings")
+
+  bids Bid[] @relation("TechnicianBids")
 }
 
 model TechnicianProfile {
@@ -70,5 +72,22 @@ model Listing {
   createdAt   DateTime      @default(now())
   expiresAt   DateTime
   updatedAt   DateTime      @updatedAt
+
+  bids Bid[]
 }
 
+model Bid {
+  id           String   @id @default(cuid())
+  listingId    String
+  technicianId String
+
+  listing      Listing  @relation(fields: [listingId], references: [id])
+  technician   User     @relation("TechnicianBids", fields: [technicianId], references: [id])
+
+  priceCents   Int
+  note         String?
+
+  createdAt    DateTime @default(now())
+
+  @@unique([listingId, technicianId]) // one bid per tech per listing (simple baseline)
+}
