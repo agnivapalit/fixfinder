@@ -71,6 +71,7 @@
               € {{ (b.priceCents / 100).toFixed(2) }}
             </div>
             <div class="text-sm text-gray-600">Tech: {{ b.technician.email }}</div>
+            <button class="border rounded px-3 py-1 mt-2" @click="messageTech(b.technician.id)"> Message </button>
             <div v-if="b.note" class="text-sm mt-2 whitespace-pre-wrap">{{ b.note }}</div>
           </div>
 
@@ -87,6 +88,8 @@ import { useRoute } from "vue-router";
 import { useAuthStore } from "../stores/auth";
 import { useListingsStore } from "../stores/listings";
 import { useFavouritesStore } from "../stores/favourites";
+import { useRouter } from "vue-router";
+import { useChatStore } from "../stores/chat";
 
 const route = useRoute();
 const auth = useAuthStore();
@@ -99,6 +102,9 @@ const note = ref("");
 const sort = ref("price_asc");
 
 const favs = useFavouritesStore();
+
+const router = useRouter();
+const chat = useChatStore();
 
 async function refresh() {
   await listings.fetchDetail(listingId);
@@ -119,6 +125,11 @@ async function loadBids() {
 
 async function toggleFav() {
   await favs.toggle(listingId);
+}
+
+async function messageTech(technicianId) {
+  const thread = await chat.createThread(listingId, technicianId);
+  router.push(`/chat/${thread.id}`);
 }
 
 onMounted(refresh);

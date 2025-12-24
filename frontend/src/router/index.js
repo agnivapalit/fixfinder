@@ -8,6 +8,8 @@ import MyListingsView from "../views/MyListingsView.vue";
 import BrowseListingsView from "../views/BrowseListingsView.vue";
 import ListingDetailsView from "../views/ListingDetailsView.vue";
 import FavouritesView from "../views/FavouritesView.vue";
+import ChatInboxView from "../views/ChatInboxView.vue";
+import ChatThreadView from "../views/ChatThreadView.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -49,6 +51,16 @@ const router = createRouter({
       path: "/favourites",
       component: FavouritesView,
       meta: { requiresAuth: true, roles: ["TECHNICIAN"] },
+    },
+    {
+      path: "/chat",
+      component: ChatInboxView,
+      meta: { requiresAuth: true, roles: ["CUSTOMER", "TECHNICIAN", "ADMIN"] },
+    },
+    {
+      path: "/chat/:threadId",
+      component: ChatThreadView,
+      meta: { requiresAuth: true, roles: ["CUSTOMER", "TECHNICIAN", "ADMIN"] },
     },
   ],
 });

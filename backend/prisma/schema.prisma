@@ -41,6 +41,10 @@ model User {
 
   bids Bid[] @relation("TechnicianBids")
   favourites Favourite[]
+
+  customerThreads   ChatThread[] @relation("CustomerThreads")
+  technicianThreads ChatThread[] @relation("TechnicianThreads")
+  sentMessages      Message[]    @relation("SentMessages")
 }
 
 model TechnicianProfile {
@@ -76,6 +80,7 @@ model Listing {
 
   bids Bid[]
   favouritedBy Favourite[]
+  chatThreads ChatThread[]
 }
 
 model Bid {
@@ -104,4 +109,33 @@ model Favourite {
   listing      Listing  @relation(fields: [listingId], references: [id])
 
   @@unique([technicianId, listingId])
+}
+
+model ChatThread {
+  id           String   @id @default(cuid())
+  listingId    String
+  customerId   String
+  technicianId String
+
+  listing      Listing  @relation(fields: [listingId], references: [id])
+  customer     User     @relation("CustomerThreads", fields: [customerId], references: [id])
+  technician   User     @relation("TechnicianThreads", fields: [technicianId], references: [id])
+
+  messages     Message[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([listingId, technicianId]) // one thread per tech per listing
+}
+
+model Message {
+  id        String     @id @default(cuid())
+  threadId  String
+  senderId  String
+  body      String
+
+  thread    ChatThread @relation(fields: [threadId], references: [id])
+  sender    User       @relation("SentMessages", fields: [senderId], references: [id])
+
+  createdAt DateTime   @default(now())
 }
