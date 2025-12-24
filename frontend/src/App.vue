@@ -6,7 +6,8 @@
 
         <div class="flex items-center gap-3">
           <RouterLink class="underline" to="/dashboard">Dashboard</RouterLink>
-
+          <RouterLink class="underline" to="/browse">Browse</RouterLink>
+          <RouterLink v-if="auth.user?.role === 'CUSTOMER'" class="underline" to="/my-listings">My Listings</RouterLink>
           <RouterLink v-if="!auth.token" class="underline" to="/login">Login</RouterLink>
 
           <div v-else class="flex items-center gap-2">

@@ -2,7 +2,7 @@
   "name": "backend",
   "type": "module",
   "scripts": {
-    "dev": "npx nodemon src/server.js",
+    "dev": "npx nodemon server.js",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio"
   },

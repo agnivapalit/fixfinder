@@ -3,8 +3,10 @@ import cors from "cors";
 import morgan from "morgan";
 import dotenv from "dotenv";
 
-import { authRouter } from "../routes/auth.routes.js";
-import { meRouter } from "../routes/me.routes.js";
+import { authRouter } from "./routes/auth.routes.js";
+import { meRouter } from "./routes/me.routes.js";
+import { listingsRouter } from "./routes/listings.routes.js";
+import { adminRouter } from "./routes/admin.routes.js";
 
 dotenv.config();
 
@@ -18,6 +20,9 @@ app.get("/health", (req, res) => res.json({ ok: true }));
 
 app.use("/auth", authRouter);
 app.use("/me", meRouter);
+app.use("/listings", listingsRouter);
+app.use("/admin", adminRouter);
+
 
 // Central error handler
 app.use((err, req, res, next) => {

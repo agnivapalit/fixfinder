@@ -3,6 +3,9 @@ import LoginView from "../views/LoginView.vue";
 import DashboardView from "../views/DashboardView.vue";
 import { useAuthStore } from "../stores/auth";
 import PendingApprovalView from "../views/PendingApprovalView.vue";
+import CreateListingView from "../views/CreateListingView.vue";
+import MyListingsView from "../views/MyListingsView.vue";
+import BrowseListingsView from "../views/BrowseListingsView.vue"; 
 
 const router = createRouter({
   history: createWebHistory(),
@@ -20,6 +23,22 @@ const router = createRouter({
       component: PendingApprovalView,
       meta: { requiresAuth: true },
     },
+    {
+      path: "/browse",
+      component: BrowseListingsView,
+      meta: { requiresAuth: true, roles: ["TECHNICIAN", "CUSTOMER", "ADMIN"] },
+    },
+    {
+      path: "/listings/create",
+      component: CreateListingView,
+      meta: { requiresAuth: true, roles: ["CUSTOMER"] },
+    },
+    {
+      path: "/my-listings",
+      component: MyListingsView,
+      meta: { requiresAuth: true, roles: ["CUSTOMER"] },
+    },
+
   ],
 });
 
@@ -50,6 +69,10 @@ router.beforeEach(async (to) => {
   // Optional: if already logged in, prevent going back to login
   if (to.path === "/login" && auth.token) {
     return "/dashboard";
+  }
+
+  if (to.meta.roles && auth.user && !to.meta.roles.includes(auth.user.role)) {
+  return "/dashboard";
   }
 
   return true;

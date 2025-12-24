@@ -57,7 +57,7 @@ authRouter.post("/login", async (req, res, next) => {
     if (!user) return next(httpError(401, "Invalid credentials"));
     if (user.isBanned) return next(httpError(403, "Account banned"));
 
-    // Technician approval
+    // Technician approval pending
     if (user.role === "TECHNICIAN" && !user.technicianProfile?.approved) {
       return next(httpError(403, "Technician pending admin approval"));
     }
