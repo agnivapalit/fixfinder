@@ -15,6 +15,8 @@
       </div>
     </div>
 
+    <button v-if="auth.user?.role === 'TECHNICIAN'" class="border rounded px-3 py-2" @click="done">Mark done</button>
+
     <p v-if="listings.error" class="text-red-600 mt-3">{{ listings.error }}</p>
     <div v-if="listings.loading" class="mt-4">Loading...</div>
 
@@ -53,6 +55,21 @@
         </form>
       </div>
 
+      <!-- Technician: send offer -->
+      <div v-if="auth.user?.role === 'TECHNICIAN'" class="border rounded p-4">
+        <div class="font-semibold mb-2">Send Offer (max 3)</div>
+
+        <form class="space-y-2" @submit.prevent="submitOffer">
+          <input class="w-full border rounded p-2" v-model="offerType" placeholder="Repair type (e.g. zipper replacement)" />
+          <textarea class="w-full border rounded p-2 h-24" v-model="offerDesc" placeholder="Offer description (min 10 chars)"></textarea>
+          <input class="w-full border rounded p-2" v-model="offerLocation" placeholder="Location (in shop / flexible / address)" />
+
+          <button class="bg-black text-white rounded p-2 disabled:opacity-50" :disabled="listings.loading">
+            {{ listings.loading ? "Sending..." : "Send Offer" }}
+          </button>
+        </form>
+      </div>
+
       <!-- Customer/Admin: view bids -->
       <div v-if="auth.user?.role !== 'TECHNICIAN'" class="border rounded p-4">
         <div class="flex items-center justify-between mb-3">
@@ -78,9 +95,36 @@
           <div v-if="!listings.bids.length" class="text-gray-600">No bids yet.</div>
         </div>
       </div>
+
+      <!-- Customer/Admin: view offers -->
+      <div v-if="auth.user?.role !== 'TECHNICIAN'" class="border rounded p-4">
+        <div class="font-semibold mb-3">Offers</div>
+
+        <button class="border rounded px-3 py-2 mb-3" @click="listings.fetchOffers(listingId)">
+          Refresh offers
+        </button>
+
+        <div class="space-y-2">
+          <div v-for="o in listings.offers" :key="o.id" class="border rounded p-3">
+            <div class="font-semibold">{{ o.repairType }} • {{ o.status }}</div>
+            <div class="text-sm text-gray-600">Tech: {{ o.technician.email }}</div>
+            <div class="text-sm mt-2 whitespace-pre-wrap">{{ o.description }}</div>
+            <div class="text-sm text-gray-700 mt-2">Location: {{ o.location }}</div>
+
+            <button
+              v-if="o.status === 'SENT'"
+              class="mt-2 bg-black text-white rounded px-3 py-1 disabled:opacity-50"
+              :disabled="listings.loading"
+              @click="accept(o.id)">
+              Accept offer</button>
+          </div>
+
+        <div v-if="!listings.offers.length" class="text-gray-600">No offers yet.</div>
+      </div>
     </div>
   </div>
-</template>
+  </div>
+ </template>
 
 <script setup>
 import { onMounted, ref } from "vue";
@@ -106,8 +150,13 @@ const favs = useFavouritesStore();
 const router = useRouter();
 const chat = useChatStore();
 
+const offerType = ref("");
+const offerDesc = ref("");
+const offerLocation = ref("");
+
 async function refresh() {
   await listings.fetchDetail(listingId);
+  await listings.fetchOffers(listingId);
   if (auth.user?.role !== "TECHNICIAN") {
     await listings.fetchBids(listingId, sort.value);
   }
@@ -130,6 +179,28 @@ async function toggleFav() {
 async function messageTech(technicianId) {
   const thread = await chat.createThread(listingId, technicianId);
   router.push(`/chat/${thread.id}`);
+}
+
+async function submitOffer() {
+  await listings.sendOffer(listingId, {
+    repairType: offerType.value,
+    description: offerDesc.value,
+    location: offerLocation.value,
+  });
+  offerType.value = "";
+  offerDesc.value = "";
+  offerLocation.value = "";
+  await listings.fetchOffers(listingId);
+}
+
+async function accept(offerId) {
+  await listings.acceptOffer(offerId);
+  await refresh();
+}
+
+async function done() {
+  await listings.markDone(listingId);
+  await refresh();
 }
 
 onMounted(refresh);

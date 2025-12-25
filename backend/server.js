@@ -9,6 +9,7 @@ import { listingsRouter } from "./routes/listings.routes.js";
 import { adminRouter } from "./routes/admin.routes.js";
 import { favouritesRouter } from "./routes/favourites.routes.js";
 import { chatRouter } from "./routes/chat.routes.js";
+import { offersRouter } from "./routes/offers.routes.js";
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use("/listings", listingsRouter);
 app.use("/admin", adminRouter);
 app.use("/favourites", favouritesRouter);
 app.use("/chat", chatRouter);
+app.use("/", offersRouter);
 
 // Central error handler
 app.use((err, req, res, next) => {

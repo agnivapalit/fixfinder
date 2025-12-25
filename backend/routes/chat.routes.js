@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../db.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { httpError } from "../lib/errors.js";
+import { notify } from "../lib/notify.js";
 
 export const chatRouter = express.Router();
 
@@ -144,6 +145,24 @@ chatRouter.post("/threads/:threadId/messages", async (req, res, next) => {
     const msg = await prisma.message.create({
       data: { threadId, senderId: req.user.sub, body },
       select: { id: true, body: true, createdAt: true, senderId: true },
+    });
+
+    // send notification to other participants
+    const threadFull = await prisma.chatThread.findUnique({
+      where: { id: threadId },
+      include: {
+        customer: { select: { email: true, id: true } },
+        technician: { select: { email: true, id: true } },
+      },
+    });
+    const to =
+      req.user.sub === threadFull.customerId ? threadFull.technician : threadFull.customer;
+
+    await notify("message_received", {
+      threadId,
+      listingId: threadFull.listingId,
+      toEmail: to.email,
+      toUserId: to.id,
     });
 
     // bump thread updatedAt (so inbox ordering is correct)

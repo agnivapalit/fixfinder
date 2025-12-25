@@ -22,6 +22,12 @@ enum ListingStatus {
   CLOSED
 }
 
+enum OfferStatus {
+  SENT
+  ACCEPTED
+  REJECTED
+}
+
 model User {
   id            String   @id @default(cuid())
   email         String   @unique
@@ -41,6 +47,7 @@ model User {
 
   bids Bid[] @relation("TechnicianBids")
   favourites Favourite[]
+  offers Offer[]
 
   customerThreads   ChatThread[] @relation("CustomerThreads")
   technicianThreads ChatThread[] @relation("TechnicianThreads")
@@ -81,6 +88,8 @@ model Listing {
   bids Bid[]
   favouritedBy Favourite[]
   chatThreads ChatThread[]
+  jobDoneAt DateTime?
+  offers Offer[]
 }
 
 model Bid {
@@ -138,4 +147,23 @@ model Message {
   sender    User       @relation("SentMessages", fields: [senderId], references: [id])
 
   createdAt DateTime   @default(now())
+}
+
+model Offer {
+  id           String      @id @default(cuid())
+  listingId    String
+  technicianId String
+
+  listing      Listing     @relation(fields: [listingId], references: [id])
+  technician   User        @relation(fields: [technicianId], references: [id])
+
+  repairType   String
+  description  String
+  location     String
+  status       OfferStatus @default(SENT)
+
+  createdAt    DateTime    @default(now())
+
+  @@index([listingId])
+  @@index([technicianId])
 }
