@@ -10,6 +10,7 @@ export const useListingsStore = defineStore("listings", {
     detail: null,
     bids: [],
     offers: [],
+    review: null,
   }),
   actions: {
     async fetchActive() {
@@ -139,6 +140,32 @@ export const useListingsStore = defineStore("listings", {
         throw e;
       } finally {
         this.loading = false;
+      }
+    },
+
+    async fetchReview(listingId) {
+      this.error = null;
+      try {
+        const res = await api.get(`/listings/${listingId}/review`);
+        this.review = res.data.review;
+      } catch (e) {
+        // if none, keep null; only show error for real failures
+        if (e?.response?.status !== 404) {
+          this.error = e?.response?.data?.error || "Failed to load review";
+        }
+        this.review = null;
+      }
+    },
+
+    async createReview(listingId, payload) {
+      this.error = null;
+      try {
+        const res = await api.post(`/listings/${listingId}/review`, payload);
+        this.review = res.data.review;
+        return this.review;
+      } catch (e) {
+        this.error = e?.response?.data?.error || "Failed to submit review";
+        throw e;
       }
     },
 

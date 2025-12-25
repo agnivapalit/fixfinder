@@ -77,6 +77,8 @@
           <select class="border rounded p-2 text-sm" v-model="sort" @change="loadBids">
             <option value="price_asc">Price: Low → High</option>
             <option value="price_desc">Price: High → Low</option>
+            <option value="rating_desc">Rating: High → Low</option>
+            <option value="rating_asc">Rating: Low → High</option>
           </select>
         </div>
 
@@ -88,6 +90,12 @@
               € {{ (b.priceCents / 100).toFixed(2) }}
             </div>
             <div class="text-sm text-gray-600">Tech: {{ b.technician.email }}</div>
+            <div class="text-sm text-yellow-600">
+              Rating: 
+              <span v-if="b.technician.technicianProfile.ratingCount > 0">
+                {{ b.technician.technicianProfile.ratingAvg.toFixed(1) }} ({{ b.technician.technicianProfile.ratingCount }} reviews)
+              </span>
+              <span v-else>No ratings yet  &nbsp;</span>
             <button class="border rounded px-3 py-1 mt-2" @click="messageTech(b.technician.id)"> Message </button>
             <div v-if="b.note" class="text-sm mt-2 whitespace-pre-wrap">{{ b.note }}</div>
           </div>
@@ -95,7 +103,7 @@
           <div v-if="!listings.bids.length" class="text-gray-600">No bids yet.</div>
         </div>
       </div>
-
+      </div>
       <!-- Customer/Admin: view offers -->
       <div v-if="auth.user?.role !== 'TECHNICIAN'" class="border rounded p-4">
         <div class="font-semibold mb-3">Offers</div>
@@ -121,8 +129,40 @@
 
         <div v-if="!listings.offers.length" class="text-gray-600">No offers yet.</div>
       </div>
+      </div>
+      <div v-if="auth.user?.role === 'CUSTOMER'" class="border rounded p-4">
+        <div class="font-semibold mb-2">Review</div>
+
+        <div v-if="listings.review">
+          <div class="text-sm">Rating: {{ listings.review.rating }} / 5</div>
+          <div v-if="listings.review.comment" class="mt-2 whitespace-pre-wrap">
+            {{ listings.review.comment }}
+          </div>
+        </div>
+
+        <div v-else>
+          <p class="text-sm text-gray-600 mb-3">
+            You can leave a review after the job is marked done.
+          </p>
+
+              <div v-if="listings.detail?.jobDoneAt" class="space-y-2">
+                <select class="border rounded p-2" v-model.number="rating">
+                  <option :value="5">5</option>
+                  <option :value="4">4</option>
+                  <option :value="3">3</option>
+                  <option :value="2">2</option>
+                  <option :value="1">1</option>
+                </select>
+
+                <textarea class="w-full border rounded p-2 h-24" v-model="comment" placeholder="Optional comment"></textarea>
+
+                <button class="bg-black text-white rounded px-3 py-2" @click="submitReview">
+                  Submit review
+                </button>
+              </div>
+          </div>
+      </div>
     </div>
-  </div>
   </div>
  </template>
 
@@ -154,11 +194,17 @@ const offerType = ref("");
 const offerDesc = ref("");
 const offerLocation = ref("");
 
+const rating = ref(5);
+const comment = ref("");
+
 async function refresh() {
   await listings.fetchDetail(listingId);
   await listings.fetchOffers(listingId);
   if (auth.user?.role !== "TECHNICIAN") {
     await listings.fetchBids(listingId, sort.value);
+  }
+  if (auth.user?.role === "CUSTOMER") {
+    await listings.fetchReview(listingId);
   }
 }
 
@@ -201,6 +247,14 @@ async function accept(offerId) {
 async function done() {
   await listings.markDone(listingId);
   await refresh();
+}
+
+async function submitReview() {
+  await listings.createReview(listingId, {
+    rating: rating.value,
+    comment: comment.value || undefined,
+  });
+  comment.value = "";
 }
 
 onMounted(refresh);

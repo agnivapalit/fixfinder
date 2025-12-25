@@ -52,6 +52,9 @@ model User {
   customerThreads   ChatThread[] @relation("CustomerThreads")
   technicianThreads ChatThread[] @relation("TechnicianThreads")
   sentMessages      Message[]    @relation("SentMessages")
+
+  customerReviews   Review[] @relation("CustomerReviews")
+  technicianReviews Review[] @relation("TechnicianReviews")
 }
 
 model TechnicianProfile {
@@ -68,6 +71,9 @@ model TechnicianProfile {
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  ratingAvg   Float @default(0)
+  ratingCount Int   @default(0)
 }
 
 model Listing {
@@ -90,6 +96,7 @@ model Listing {
   chatThreads ChatThread[]
   jobDoneAt DateTime?
   offers Offer[]
+  review Review?
 }
 
 model Bid {
@@ -165,5 +172,23 @@ model Offer {
   createdAt    DateTime    @default(now())
 
   @@index([listingId])
+  @@index([technicianId])
+}
+
+model Review {
+  id           String   @id @default(cuid())
+  listingId    String   @unique
+  customerId   String
+  technicianId String
+
+  rating       Int
+  comment      String?
+
+  createdAt    DateTime @default(now())
+
+  listing      Listing  @relation(fields: [listingId], references: [id])
+  customer     User     @relation("CustomerReviews", fields: [customerId], references: [id])
+  technician   User     @relation("TechnicianReviews", fields:  [technicianId], references: [id])
+
   @@index([technicianId])
 }

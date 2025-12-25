@@ -4,6 +4,7 @@ import { prisma } from "../db.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { httpError } from "../lib/errors.js";
 import { countWords } from "../lib/words.js";
+import { notify } from "../lib/notify.js";
 
 export const listingsRouter = express.Router();
 
@@ -155,6 +156,17 @@ listingsRouter.post(
         select: { id: true, priceCents: true, note: true, createdAt: true },
       });
 
+      const listingWithCustomer = await prisma.listing.findUnique({
+        where: { id: listingId },
+        select: { customer: { select: { email: true, id: true } } },
+      });
+
+      await notify("bid_received", {
+        listingId,
+        toEmail: listingWithCustomer.customer.email,
+        customerId: listingWithCustomer.customer.id,
+      });
+
       res.status(201).json({ bid });
     } catch (err) {
       next(err);
@@ -186,10 +198,16 @@ listingsRouter.get(
 
       // Sorting: price asc/desc (rating later)
       const sort = typeof req.query.sort === "string" ? req.query.sort : "price_asc";
+
       const orderBy =
         sort === "price_desc"
           ? [{ priceCents: "desc" }]
-          : [{ priceCents: "asc" }];
+          : sort === "rating_desc"
+            ? [{ technician: { technicianProfile: { ratingAvg: "desc" } } }]
+            : sort === "rating_asc"
+              ? [{ technician: { technicianProfile: { ratingAvg: "asc" } } }]
+              : [{ priceCents: "asc" }];
+
 
       const where =
         req.user.role === "TECHNICIAN" && !isAdmin
@@ -204,7 +222,8 @@ listingsRouter.get(
           priceCents: true,
           note: true,
           createdAt: true,
-          technician: { select: { id: true, email: true } }, // rating later
+          technician: { select: { id: true, email: true,
+            technicianProfile: { select: { ratingAvg: true, ratingCount: true } } } }, 
         },
       });
 
