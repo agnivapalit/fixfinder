@@ -11,6 +11,8 @@ import { favouritesRouter } from "./routes/favourites.routes.js";
 import { chatRouter } from "./routes/chat.routes.js";
 import { offersRouter } from "./routes/offers.routes.js";
 import { reviewsRouter } from "./routes/reviews.routes.js";
+import { technicianRouter } from "./routes/technician.routes.js";
+import { technicianReviewsRouter } from "./routes/technician.reviews.routes.js";
 
 dotenv.config();
 
@@ -28,6 +30,8 @@ app.use("/listings", listingsRouter);
 app.use("/admin", adminRouter);
 app.use("/favourites", favouritesRouter);
 app.use("/chat", chatRouter);
+app.use("/technician", technicianRouter);
+app.use("/technician", technicianReviewsRouter);
 app.use("/", offersRouter);
 app.use("/", reviewsRouter);
 

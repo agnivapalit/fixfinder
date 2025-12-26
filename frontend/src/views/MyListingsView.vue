@@ -18,6 +18,7 @@
         <div class="text-xs text-gray-500 mt-2">
           Expires: {{ new Date(l.expiresAt).toLocaleString() }}
         </div>
+        <RouterLink class="underline text-sm mt-2 inline-block" :to="`/listing/${l.id}`">Open details</RouterLink>
       </div>
 
       <div v-if="!listings.mine.length" class="text-gray-600">No listings yet.</div>

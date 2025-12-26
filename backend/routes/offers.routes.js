@@ -151,7 +151,7 @@ offersRouter.post("/offers/:offerId/accept", requireRole("CUSTOMER", "ADMIN"), a
         where: { listingId: offer.listing.id, status: "SENT", NOT: { id: offerId } },
         data: { status: "REJECTED" },
       }),
-      prisma.listing.update({ where: { id: offer.listing.id }, data: { status: "CLOSED" } }),
+      prisma.listing.update({ where: { id: offer.listing.id }, data: { status: "CLOSED", acceptedTechnicianId: offer.technicianId } }),
     ]);
 
     await notify("offer_accepted", {

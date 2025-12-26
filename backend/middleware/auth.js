@@ -18,7 +18,17 @@ export function requireAuth(req, res, next) {
 export function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user) return next(httpError(401, "Unauthorized"));
-    if (!roles.includes(req.user.role)) return next(httpError(403, "Forbidden"));
+
+    const got = String(req.user.role ?? "").trim().toUpperCase();
+    const allowed = roles.map((r) => String(r).trim().toUpperCase());
+
+    if (!allowed.includes(got)) {
+      console.log("ROLE CHECK FAIL:", { method: req.method, url: req.originalUrl, gotRaw: req.user.role, got, allowed, sub: req.user.sub });
+      return next(httpError(403, "Forbidden"));
+    }
+
+    // normalize for downstream code
+    req.user.role = got;
     next();
   };
 }

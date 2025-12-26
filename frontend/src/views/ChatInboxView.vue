@@ -16,6 +16,7 @@
         :to="`/chat/${t.id}`"
       >
         <div class="font-semibold">{{ t.listing.title }}</div>
+        <div class="mt-2"><RouterLink class="underline text-sm" :to="`/listing/${t.listingId}`">Open listing</RouterLink></div>
         <div class="text-sm text-gray-600">{{ t.listing.category }}</div>
         <div class="text-xs text-gray-500 mt-2">
           Last: {{ t.lastMessage ? t.lastMessage.body.slice(0, 80) : "No messages yet" }}

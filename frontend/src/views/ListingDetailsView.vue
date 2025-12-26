@@ -224,7 +224,7 @@ async function toggleFav() {
 
 async function messageTech(technicianId) {
   const thread = await chat.createThread(listingId, technicianId);
-  router.push(`/chat/${thread.id}`);
+  router.push(`/chat/${thread.id}?listingId=${listingId}`);
 }
 
 async function submitOffer() {

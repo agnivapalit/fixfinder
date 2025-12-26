@@ -72,13 +72,17 @@ chatRouter.post("/threads", async (req, res, next) => {
 
     const listing = await prisma.listing.findUnique({
       where: { id: listingId },
-      select: { id: true, customerId: true },
+      select: { id: true, customerId: true, acceptedTechnicianId: true, jobDoneAt: true },
     });
     if (!listing) throw httpError(404, "Listing not found");
 
     let techId = technicianId;
 
     if (req.user.role === "CUSTOMER") {
+      if (listing.jobDoneAt) throw httpError(400, "Job is done. Messaging closed.");
+      if (listing.acceptedTechnicianId && listing.acceptedTechnicianId !== techId) {
+        throw httpError(400, "Listing already accepted by a different technician.");
+      }
       if (listing.customerId !== req.user.sub) throw httpError(403, "Not your listing");
       if (!techId) throw httpError(400, "technicianId is required");
     } else if (req.user.role === "TECHNICIAN") {
@@ -138,9 +142,22 @@ chatRouter.post("/threads/:threadId/messages", async (req, res, next) => {
     const schema = z.object({ body: z.string().min(1).max(2000) });
     const { body } = schema.parse(req.body);
 
-    const thread = await prisma.chatThread.findUnique({ where: { id: threadId } });
+    const thread = await prisma.chatThread.findUnique({
+      where: { id: threadId },
+      include: {
+        listing: { select: { jobDoneAt: true, acceptedTechnicianId: true } },
+      },
+    });
     if (!thread) throw httpError(404, "Thread not found");
     if (!isParticipant(thread, req.user)) throw httpError(403, "Forbidden");
+
+    // Technician restrictions
+    if (req.user.role === "TECHNICIAN") {
+      if (thread.listing.jobDoneAt) throw httpError(400, "Job is done. Messaging closed.");
+      if (thread.listing.acceptedTechnicianId && thread.listing.acceptedTechnicianId !== req.user.sub) {
+        throw httpError(403, "Listing accepted by another technician.");
+      }
+    }
 
     const msg = await prisma.message.create({
       data: { threadId, senderId: req.user.sub, body },

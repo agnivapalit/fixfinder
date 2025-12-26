@@ -258,6 +258,8 @@ listingsRouter.get(
           createdAt: listing.createdAt,
           expiresAt: listing.expiresAt,
           customer: listing.customer,
+          jobDoneAt: listing.jobDoneAt,
+          acceptedTechnicianId: listing.acceptedTechnicianId,
         },
       });
     } catch (err) {

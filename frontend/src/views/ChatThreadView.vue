@@ -10,6 +10,7 @@
     <div class="border rounded p-3 h-80 overflow-auto bg-gray-50">
       <div v-for="m in chat.messages" :key="m.id" class="mb-3">
         <div class="text-xs text-gray-600">{{ m.sender.email }} • {{ new Date(m.createdAt).toLocaleString() }}</div>
+        <RouterLink v-if="listingId" class="underline text-sm" :to="`/listing/${listingId}`">Open listing</RouterLink>
         <div class="whitespace-pre-wrap">{{ m.body }}</div>
       </div>
       <div v-if="!chat.messages.length" class="text-gray-600">No messages yet.</div>
@@ -32,6 +33,7 @@ import { useChatStore } from "../stores/chat";
 const route = useRoute();
 const chat = useChatStore();
 const threadId = route.params.threadId;
+const listingId = route.query.listingId;
 
 const body = ref("");
 

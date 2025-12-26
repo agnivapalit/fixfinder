@@ -55,6 +55,8 @@ model User {
 
   customerReviews   Review[] @relation("CustomerReviews")
   technicianReviews Review[] @relation("TechnicianReviews")
+
+  acceptedJobs Listing[] @relation("AcceptedTech")
 }
 
 model TechnicianProfile {
@@ -97,6 +99,9 @@ model Listing {
   jobDoneAt DateTime?
   offers Offer[]
   review Review?
+
+  acceptedTechnicianId String?
+  acceptedTechnician   User?   @relation("AcceptedTech", fields: [acceptedTechnicianId], references: [id])
 }
 
 model Bid {

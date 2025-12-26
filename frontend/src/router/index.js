@@ -10,6 +10,8 @@ import ListingDetailsView from "../views/ListingDetailsView.vue";
 import FavouritesView from "../views/FavouritesView.vue";
 import ChatInboxView from "../views/ChatInboxView.vue";
 import ChatThreadView from "../views/ChatThreadView.vue";
+import TechJobsView from "../views/TechJobsView.vue";
+import TechReviewsView from "../views/TechReviewsView.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -61,6 +63,16 @@ const router = createRouter({
       path: "/chat/:threadId",
       component: ChatThreadView,
       meta: { requiresAuth: true, roles: ["CUSTOMER", "TECHNICIAN", "ADMIN"] },
+    },
+    {
+      path: "/tech/jobs",
+      component: TechJobsView,
+      meta: { requiresAuth: true, roles: ["TECHNICIAN"] },
+    },
+    {
+      path: "/tech/reviews",
+      component: TechReviewsView,
+      meta: { requiresAuth: true, roles: ["TECHNICIAN"] },
     },
   ],
 });
