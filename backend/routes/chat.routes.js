@@ -10,7 +10,7 @@ export const chatRouter = express.Router();
 chatRouter.use(requireAuth, requireRole("CUSTOMER", "TECHNICIAN", "ADMIN"));
 
 function isParticipant(thread, user) {
-  return thread.customerId === user.sub || thread.technicianId === user.sub || user.role === "ADMIN";
+  return thread.customerId === user.sub || thread.technicianId === user.sub;
 }
 
 async function assertTechCanMessageListing({ listingId, techId }) {
@@ -29,12 +29,8 @@ async function assertTechCanMessageListing({ listingId, techId }) {
 // List my threads (inbox)
 chatRouter.get("/threads", async (req, res, next) => {
   try {
-    const where =
-      req.user.role === "ADMIN"
-        ? {}
-        : req.user.role === "CUSTOMER"
-          ? { customerId: req.user.sub }
-          : { technicianId: req.user.sub };
+    if (req.user.role === "ADMIN") throw httpError(403, "Admins cannot list all threads");
+    const where = req.user.role === "CUSTOMER" ? { customerId: req.user.sub } : { technicianId: req.user.sub };
 
     const threads = await prisma.chatThread.findMany({
       where,
@@ -86,12 +82,8 @@ chatRouter.get("/thread-by-listing", async (req, res, next) => {
 
     if (!thread) return res.json({ thread: null });
 
-    // permission: only participants/admin
-    if (
-      req.user.role !== "ADMIN" &&
-      thread.customerId !== req.user.sub &&
-      thread.technicianId !== req.user.sub
-    ) {
+    // permission: only participants
+    if (thread.customerId !== req.user.sub && thread.technicianId !== req.user.sub) {
       throw httpError(403, "Forbidden");
     }
 
@@ -132,7 +124,7 @@ chatRouter.post("/threads", async (req, res, next) => {
     } else if (req.user.role === "TECHNICIAN") {
       techId = req.user.sub;
     } else if (req.user.role === "ADMIN") {
-      if (!techId) throw httpError(400, "technicianId is required for admin");
+      throw httpError(403, "Admins cannot create threads");
     }
 
     // Ensure the specified technician is allowed to message this listing

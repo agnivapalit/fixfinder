@@ -76,13 +76,58 @@ adminRouter.get("/offers", async (_, res) => {
 adminRouter.get("/reports", async (_, res) => {
   const reports = await prisma.report.findMany({
     orderBy: { createdAt: "desc" },
-    include: {
-      listing: { select: { title: true } },
+    select: {
+      id: true,
+      listingId: true,
+      reason: true,
+      createdAt: true,
+      includeChat: true,
+      listing: { select: { id: true, title: true } },
       reporter: { select: { email: true } },
       reported: { select: { email: true } },
     },
   });
   res.json({ reports });
+});
+
+// Get chat messages tied to a report (only if report.includeChat is true)
+adminRouter.get('/reports/:id/chat', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const report = await prisma.report.findUnique({ where: { id }, select: { id: true, listingId: true, reporterId: true, reportedId: true, includeChat: true } });
+    if (!report) return res.status(404).json({ error: 'Report not found' });
+    if (!report.includeChat) return res.status(400).json({ error: 'Chat was not included with this report' });
+
+    // Find threads for the listing that are related to either the reported user or reporter
+    const threads = await prisma.chatThread.findMany({
+      where: {
+        listingId: report.listingId,
+        OR: [
+          { customerId: report.reportedId },
+          { technicianId: report.reportedId },
+          { customerId: report.reporterId },
+          { technicianId: report.reporterId },
+        ],
+      },
+      select: { id: true, listingId: true, customerId: true, technicianId: true },
+    });
+
+    const threadsWithMessages = await Promise.all(
+      threads.map(async (t) => {
+        const messages = await prisma.message.findMany({
+          where: { threadId: t.id },
+          orderBy: { createdAt: 'asc' },
+          select: { id: true, body: true, createdAt: true, senderId: true, sender: { select: { email: true } } },
+        });
+        return { threadId: t.id, customerId: t.customerId, technicianId: t.technicianId, messages };
+      })
+    );
+
+    res.json({ threads: threadsWithMessages });
+  } catch (err) {
+    next(err);
+  }
 });
 
 //Ban User -------------------- 
