@@ -73,6 +73,7 @@ model TechnicianProfile {
 
   experienceYears Int   @default(0)
   certifications  String @default("[]")    
+  experiences    String @default("[]")
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

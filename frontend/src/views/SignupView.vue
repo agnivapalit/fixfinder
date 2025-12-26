@@ -32,6 +32,9 @@
           </div>
         </div>
 
+        <input class="w-full border rounded p-2" v-model="categoriesInput" placeholder="Categories (comma separated, max 30 chars each)" />
+        <p v-if="categoryError" class="text-red-600 text-sm">{{ categoryError }}</p>
+
         <select class="w-full border rounded p-2" v-model="workplace">
           <option value="IN_SHOP">In shop</option>
           <option value="FLEXIBLE">Flexible</option>
@@ -70,6 +73,8 @@ const experience = ref();
 const workplace = ref("FLEXIBLE");
 const experienceCount = ref(0);
 const experiences = ref([]);
+const categoriesInput = ref("");
+const categoryError = ref(null);
 
 // keep experiences array in sync with selected count
 import { watch } from "vue";
@@ -89,6 +94,18 @@ const error = ref(null);
 async function submit() {
   error.value = null;
   try {
+    // parse categories input
+    categoryError.value = null;
+    let categories = undefined;
+    if (role.value === "TECHNICIAN" && categoriesInput.value.trim()) {
+      categories = categoriesInput.value.split(",").map(s => s.trim()).filter(Boolean);
+      const tooLong = categories.find(c => c.length > 30);
+      if (tooLong) {
+        categoryError.value = `Category '${tooLong}' is longer than 30 characters`;
+        return;
+      }
+    }
+
     await api.post("/auth/signup", {
       email: email.value,
       password: password.value,
@@ -98,6 +115,7 @@ async function submit() {
       experience: experience.value,
       workplace: workplace.value,
       experiences: role.value === "TECHNICIAN" ? experiences.value.filter(Boolean) : undefined,
+      categories: categories,
     });
 
     if (role.value === "TECHNICIAN") {

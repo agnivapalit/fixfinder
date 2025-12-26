@@ -15,6 +15,7 @@
         <tr v-for="t in techs" :key="t.user.id">
           <td>{{ t.user.email }}</td>
           <td>
+            <button class="border rounded px-3 py-1" @click="viewDetails(t.user.id)" :disabled="loading">View</button>
             <button class="border rounded px-3 py-1" @click="approve(t.user.id)" :disabled="loading">Approve</button>
             <button class="border rounded px-3 py-1" @click="reject(t.user.id)" :disabled="loading">Reject</button>
           </td>
@@ -22,17 +23,56 @@
       </tbody>
     </table>
 
+    <!-- Details modal -->
+    <div v-if="selectedTech" class="modal fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+      <div class="bg-white p-6 rounded shadow max-w-xl w-full">
+        <h2 class="text-lg font-semibold mb-3">Technician signup details</h2>
+        <div class="mb-2"><strong>Email:</strong> {{ selectedTech.user.email }}</div>
+        <div v-if="selectedTech.user.phone" class="mb-2"><strong>Phone:</strong> {{ selectedTech.user.phone }}</div>
+        <div class="mb-2"><strong>Workplace:</strong> {{ selectedTech.workplace }}</div>
+        <div class="mb-2"><strong>Experience (years):</strong> {{ selectedTech.experienceYears }}</div>
+        <div v-if="parsedExperiences.length" class="mb-2"><strong>Experiences:</strong>
+          <ul class="list-disc pl-6">
+            <li v-for="(e, i) in parsedExperiences" :key="i">{{ e }}</li>
+          </ul>
+        </div>
+        <div class="mb-2"><strong>Categories:</strong> <span v-for="c in parsedCategories" :key="c" class="mr-2 inline-block rounded bg-gray-100 px-2">{{ c }}</span></div>
+        <div class="mb-2"><strong>Certifications:</strong> <span v-if="parsedCerts.length">{{ parsedCerts.join(', ') }}</span><span v-else>None</span></div>
+        <div class="mb-4 text-sm text-gray-600"><strong>Requested:</strong> {{ new Date(selectedTech.createdAt).toLocaleString() }}</div>
+
+        <div class="flex justify-end">
+          <button class="border rounded px-3 py-1 mr-2" @click="closeDetails">Close</button>
+          <button class="border rounded px-3 py-1 bg-green-100" @click="approve(selectedTech.userId)" :disabled="loading">Approve</button>
+          <button class="border rounded px-3 py-1 bg-red-100" @click="reject(selectedTech.userId)" :disabled="loading">Reject</button>
+        </div>
+      </div>
+    </div>
+
     <p v-else class="text-gray-600">No pending technicians.</p>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { api } from '../lib/api';
 
 const techs = ref([]);
 const loading = ref(false);
 const message = ref('');
+const selectedTech = ref(null);
+
+const parsedCategories = computed(() => {
+  if (!selectedTech.value) return [];
+  try { return JSON.parse(selectedTech.value.categories || '[]'); } catch { return []; }
+});
+const parsedExperiences = computed(() => {
+  if (!selectedTech.value) return [];
+  try { return JSON.parse(selectedTech.value.experiences || '[]'); } catch { return []; }
+});
+const parsedCerts = computed(() => {
+  if (!selectedTech.value) return [];
+  try { return JSON.parse(selectedTech.value.certifications || '[]'); } catch { return []; }
+});
 
 async function loadPending() {
   loading.value = true;
@@ -45,11 +85,28 @@ async function loadPending() {
   } finally { loading.value = false; }
 }
 
+async function viewDetails(userId) {
+  loading.value = true;
+  selectedTech.value = null;
+  message.value = '';
+  try {
+    const { data } = await api.get(`/admin/technicians/${userId}`);
+    selectedTech.value = data.tech;
+  } catch (err) {
+    message.value = err?.response?.data?.error || 'Failed to load details';
+  } finally { loading.value = false; }
+}
+
+function closeDetails() {
+  selectedTech.value = null;
+}
+
 async function approve(userId) {
   loading.value = true;
   try {
     await api.post(`/admin/technicians/${userId}/approve`);
     message.value = 'Technician approved';
+    if (selectedTech.value && selectedTech.value.userId === userId) selectedTech.value = null;
     await loadPending();
   } catch (err) {
     message.value = 'Failed to approve';
@@ -61,6 +118,7 @@ async function reject(userId) {
   try {
     await api.post(`/admin/technicians/${userId}/reject`);
     message.value = 'Technician rejected';
+    if (selectedTech.value && selectedTech.value.userId === userId) selectedTech.value = null;
     await loadPending();
   } catch (err) {
     message.value = 'Failed to reject';

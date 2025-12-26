@@ -15,6 +15,15 @@ adminRouter.get("/technicians/pending", async (_, res) => {
   res.json({ techs });
 });
 
+// Get single technician details (for admin review)
+adminRouter.get("/technicians/:userId", async (req, res) => {
+  const tech = await prisma.technicianProfile.findUnique({
+    where: { userId: req.params.userId },
+    include: { user: { select: { id: true, email: true, phone: true, createdAt: true } } },
+  });
+  if (!tech) return res.status(404).json({ error: "Technician not found" });
+  res.json({ tech });
+});
 
 // Approve technician
 adminRouter.post("/technicians/:userId/approve", async (req, res) => {

@@ -16,6 +16,7 @@ const signupSchema = z.object({
   experience: z.union([z.string(), z.number()]).optional(),
   workplace: z.enum(["IN_SHOP", "FLEXIBLE"]).optional(),
   experiences: z.array(z.string()).optional(),
+  categories: z.union([z.string(), z.array(z.string())]).optional(),
 });
 
 authRouter.post("/signup", async (req, res, next) => {
@@ -53,9 +54,33 @@ authRouter.post("/signup", async (req, res, next) => {
           certificationsStr = JSON.stringify(String(data.certifications).split(",").map(s => s.trim()).filter(Boolean));
         }
       }
-    } else if (data.experiences && Array.isArray(data.experiences)) {
-      // If experiences were submitted, store them in the certifications column as JSON for now
-      certificationsStr = JSON.stringify(data.experiences);
+    }
+
+    // prepare experiences JSON string (array of strings)
+    let experiencesStr = "[]";
+    if (data.experiences && Array.isArray(data.experiences)) {
+      experiencesStr = JSON.stringify(data.experiences.filter(Boolean));
+    }
+
+    // prepare categories JSON string and validate length <= 30 per category
+    let categoriesStr = "[]";
+    if (data.categories) {
+      let cats = [];
+      if (Array.isArray(data.categories)) cats = data.categories.map(s => String(s).trim()).filter(Boolean);
+      else {
+        try {
+          const parsed = JSON.parse(String(data.categories));
+          if (Array.isArray(parsed)) cats = parsed.map(s => String(s).trim()).filter(Boolean);
+          else cats = String(data.categories).split(",").map(s => s.trim()).filter(Boolean);
+        } catch (e) {
+          cats = String(data.categories).split(",").map(s => s.trim()).filter(Boolean);
+        }
+      }
+      // validation: each category <= 30 chars
+      for (const c of cats) {
+        if (c.length > 30) throw httpError(400, "Each category must be at most 30 characters");
+      }
+      categoriesStr = JSON.stringify(cats);
     }
 
     const user = await prisma.user.create({
@@ -70,6 +95,8 @@ authRouter.post("/signup", async (req, res, next) => {
                 create: {
                   workplace: data.workplace ?? "IN_SHOP",
                   certifications: certificationsStr,
+                  experiences: experiencesStr,
+                  categories: categoriesStr,
                   experienceYears,
                 },
               },
