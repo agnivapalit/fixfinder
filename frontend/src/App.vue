@@ -30,6 +30,7 @@
 
           <div v-else class="flex items-center gap-2">
             <span class="text-sm text-gray-600">{{ auth.user?.email }}</span>
+            <RouterLink class="underline" to="/profile">Profile</RouterLink>
             <button class="border rounded px-3 py-1" @click="auth.logout()">Logout</button>
           </div>
         </div>

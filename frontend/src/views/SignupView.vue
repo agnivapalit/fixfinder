@@ -5,6 +5,8 @@
     <p v-if="error" class="text-red-600 mb-3">{{ error }}</p>
 
     <form class="space-y-3" @submit.prevent="submit">
+      <input class="w-full border rounded p-2" v-model="firstName" placeholder="First name" />
+      <input class="w-full border rounded p-2" v-model="lastName" placeholder="Last name" />
       <input class="w-full border rounded p-2" v-model="email" placeholder="Email" />
       <input class="w-full border rounded p-2" type="password" v-model="password" placeholder="Password" />
       <input class="w-full border rounded p-2" v-model="phone" placeholder="Phone (mock verified)" />
@@ -63,6 +65,8 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 
+const firstName = ref("");
+const lastName = ref("");
 const email = ref("");
 const password = ref("");
 const phone = ref("");
@@ -110,6 +114,8 @@ async function submit() {
       email: email.value,
       password: password.value,
       phone: phone.value,
+      firstName: firstName.value,
+      lastName: lastName.value,
       role: role.value,
       certifications: certifications.value,
       experience: experience.value,

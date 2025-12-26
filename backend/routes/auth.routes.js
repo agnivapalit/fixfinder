@@ -11,6 +11,8 @@ const signupSchema = z.object({
   email: z.string().email(),
   phone: z.string().min(6).optional(),
   password: z.string().min(8),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
   role: z.enum(["CUSTOMER", "TECHNICIAN"]).optional(),
   certifications: z.union([z.string(), z.array(z.string())]).optional(),
   experience: z.union([z.string(), z.number()]).optional(),
@@ -89,6 +91,8 @@ authRouter.post("/signup", async (req, res, next) => {
         phone: data.phone,
         passwordHash,
         role: data.role ?? "CUSTOMER",
+        firstName: data.firstName?.trim() || null,
+        lastName: data.lastName?.trim() || null,
         ...(data.role === "TECHNICIAN"
           ? {
               technicianProfile: {

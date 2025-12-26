@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import LoginView from "../views/LoginView.vue";
 import SignupView from "../views/SignupView.vue";
 import DashboardView from "../views/DashboardView.vue";
+import ProfileView from "../views/ProfileView.vue";
 import { useAuthStore } from "../stores/auth";
 import PendingApprovalView from "../views/PendingApprovalView.vue";
 import CreateListingView from "../views/CreateListingView.vue";
@@ -28,6 +29,11 @@ const router = createRouter({
     {
       path: "/dashboard",
       component: DashboardView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/profile",
+      component: ProfileView,
       meta: { requiresAuth: true },
     },
     {
