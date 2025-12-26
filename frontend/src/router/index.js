@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import LoginView from "../views/LoginView.vue";
+import SignupView from "../views/SignupView.vue";
 import DashboardView from "../views/DashboardView.vue";
 import { useAuthStore } from "../stores/auth";
 import PendingApprovalView from "../views/PendingApprovalView.vue";
@@ -22,6 +23,7 @@ const router = createRouter({
   routes: [
     { path: "/", redirect: "/dashboard" },
     { path: "/login", component: LoginView },
+    { path: "/signup", component: SignupView },
 
     {
       path: "/dashboard",
@@ -127,7 +129,7 @@ router.beforeEach(async (to) => {
   }
 
   // Optional: if already logged in, prevent going back to login
-  if (to.path === "/login" && auth.token) {
+  if ((to.path === "/login" || to.path === "/signup") && auth.token) {
     return "/dashboard";
   }
 

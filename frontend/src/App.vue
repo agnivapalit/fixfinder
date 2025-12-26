@@ -17,8 +17,13 @@
             </div>
           </div>
           <RouterLink v-if="auth.user?.role === 'CUSTOMER'" class="underline" to="/my-listings">My Listings</RouterLink>
-          <RouterLink v-if="!auth.token" class="underline" to="/login">Login</RouterLink>
-          <RouterLink v-if="auth.user?.role === 'TECHNICIAN'" class="underline" to="/favourites">Favourites</RouterLink>
+
+          <div v-if="!auth.token" class="flex items-center gap-2">
+            <RouterLink class="underline" to="/login">Login</RouterLink>
+            <RouterLink class="underline" to="/signup">Sign up</RouterLink>
+          </div>
+
+          <RouterLink v-if="auth.user?.role === 'TECHNICIAN'" class="underline" to="/favourites">Favourites</RouterLink>    
           <RouterLink v-if="auth.user?.role === 'TECHNICIAN' || auth.user?.role === 'CUSTOMER'" class="underline" to="/chat">Messages</RouterLink>
           <RouterLink v-if="auth.user?.role === 'TECHNICIAN'" class="underline" to="/tech/jobs">Jobs</RouterLink>
           <RouterLink v-if="auth.user?.role === 'TECHNICIAN'" class="underline" to="/tech/reviews">My Reviews</RouterLink> 
