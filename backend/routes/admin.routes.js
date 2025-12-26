@@ -130,8 +130,29 @@ adminRouter.get("/stats", async (_, res) => {
 });
 
 // Delete a listing
-adminRouter.delete("/listings/:id", async (req, res) => {
+adminRouter.delete("/listings/:id", async (req, res, next) => {
   const { id } = req.params;
-  await prisma.listing.delete({ where: { id: parseInt(id) } });
-  res.json({ ok: true });
+  try {
+    // Remove dependent records to satisfy FK RESTRICT constraints
+    const threads = await prisma.chatThread.findMany({ where: { listingId: id }, select: { id: true } });
+    const threadIds = threads.map((t) => t.id);
+
+    const ops = [];
+    if (threadIds.length) ops.push(prisma.message.deleteMany({ where: { threadId: { in: threadIds } } }));
+    ops.push(prisma.chatThread.deleteMany({ where: { listingId: id } }));
+    ops.push(prisma.bid.deleteMany({ where: { listingId: id } }));
+    ops.push(prisma.offer.deleteMany({ where: { listingId: id } }));
+    ops.push(prisma.favourite.deleteMany({ where: { listingId: id } }));
+    ops.push(prisma.report.deleteMany({ where: { listingId: id } }));
+    ops.push(prisma.review.deleteMany({ where: { listingId: id } }));
+
+    // Finally delete the listing itself
+    ops.push(prisma.listing.delete({ where: { id } }));
+
+    await prisma.$transaction(ops);
+
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
 });

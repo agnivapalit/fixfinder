@@ -13,10 +13,38 @@
       <div class="flex gap-2">
         <button class="border rounded px-3 py-2" @click="refresh">Refresh</button>
         <button v-if="auth.user?.role === 'TECHNICIAN'" class="border rounded px-3 py-2" @click="toggleFav"> Toggle favourite </button>
+        <button v-if="auth.user?.role === 'CUSTOMER' && auth.user?.id !== listings.detail?.customer?.id" class="border rounded px-3 py-2" @click="reportOpen = !reportOpen">Report</button>
       </div>
     </div>
 
     <button v-if="auth.user?.role === 'TECHNICIAN'" class="border rounded px-3 py-2" @click="done">Mark done</button>
+    <button v-if="auth.user?.role === 'TECHNICIAN' && listings.detail?.acceptedTechnicianId === auth.user?.id" class="border rounded px-3 py-2" @click="(reportTarget = 'owner', reportOpen = true)">Report customer</button>
+
+    <!-- Report -->
+    <div v-if="reportOpen" class="border rounded p-4 mt-3">
+      <div class="font-semibold mb-2">Report listing</div>
+
+      <div class="mb-2">
+        <label class="mr-3">
+          <input type="radio" v-model="reportTarget" value="owner" :disabled="auth.user?.id === listings.detail?.customer?.id" />
+          Report owner
+        </label>
+        <label v-if="listings.detail?.acceptedTechnicianId">
+          <input type="radio" v-model="reportTarget" value="technician" :disabled="auth.user?.id === listings.detail?.acceptedTechnicianId" />
+          Report technician
+        </label>
+      </div>
+
+      <textarea class="w-full border rounded p-2 h-24" v-model="reportReason" placeholder="Reason for report"></textarea>
+      <div class="flex items-center gap-2 mt-2">
+        <label class="text-sm"><input type="checkbox" v-model="reportIncludeChat" class="mr-2"/> Include chat</label>
+      </div>
+      <div class="flex gap-2 mt-3">
+        <button class="bg-black text-white rounded px-3 py-2" @click="submitReport">Submit report</button>
+        <button class="border rounded px-3 py-2" @click="reportOpen=false">Cancel</button>
+      </div>
+      <div v-if="reportMessage" class="text-sm text-green-600 mt-2">{{ reportMessage }}</div>
+    </div>
 
     <p v-if="listings.error" class="text-red-600 mt-3">{{ listings.error }}</p>
     <div v-if="listings.loading" class="mt-4">Loading...</div>
@@ -116,7 +144,26 @@
         <div class="space-y-2">
           <div v-for="o in listings.offers" :key="o.id" class="border rounded p-3">
             <div class="font-semibold">{{ o.repairType }} • {{ o.status }}</div>
-            <div class="text-sm text-gray-600">Tech: {{ o.technician.email }}</div>
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-gray-600">Tech: {{ o.technician.email }}</div>
+
+              <!-- Owner: report accepted technician -->
+              <button
+                v-if="o.status === 'ACCEPTED' && auth.user?.role === 'CUSTOMER' && auth.user?.id === listings.detail?.customer?.id"
+                class="border rounded px-3 py-1 text-sm"
+                @click="(reportTarget = 'technician', reportOpen = true)">
+                Report technician
+              </button>
+
+              <!-- Accepted technician: report customer -->
+              <button
+                v-if="o.status === 'ACCEPTED' && auth.user?.role === 'TECHNICIAN' && auth.user?.id === o.technician.id"
+                class="border rounded px-3 py-1 text-sm"
+                @click="(reportTarget = 'owner', reportOpen = true)">
+                Report customer
+              </button>
+            </div>
+
             <div class="text-sm mt-2 whitespace-pre-wrap">{{ o.description }}</div>
             <div class="text-sm text-gray-700 mt-2">Location: {{ o.location }}</div>
 
@@ -257,6 +304,32 @@ async function submitReview() {
     comment: comment.value || undefined,
   });
   comment.value = "";
+}
+
+const reportOpen = ref(false);
+const reportReason = ref("");
+const reportIncludeChat = ref(false);
+const reportTarget = ref("owner");
+const reportMessage = ref("");
+
+async function submitReport() {
+  reportMessage.value = "";
+  try {
+    let reportedId = listings.detail?.customer?.id;
+    if (reportTarget.value === "technician") {
+      reportedId = listings.detail?.acceptedTechnicianId;
+    }
+    if (!reportedId) throw new Error("No target selected for report");
+
+    await listings.createReport(listingId, { reason: reportReason.value, includeChat: reportIncludeChat.value, reportedId });
+    reportMessage.value = "Report submitted";
+    reportOpen.value = false;
+    reportReason.value = "";
+    reportIncludeChat.value = false;
+    reportTarget.value = "owner";
+  } catch (e) {
+    reportMessage.value = e?.response?.data?.error || e?.message || "Failed to submit report";
+  }
 }
 
 onMounted(refresh);

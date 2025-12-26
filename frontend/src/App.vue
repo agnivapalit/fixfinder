@@ -7,10 +7,15 @@
         <div class="flex items-center gap-3">
           <RouterLink class="underline" to="/dashboard">Dashboard</RouterLink>
           <RouterLink class="underline" to="/browse">Browse</RouterLink>
-          <RouterLink v-if="auth.user?.role === 'ADMIN'" class="underline" to="/admin/technicians">Admin: Technicians</RouterLink>
-          <RouterLink v-if="auth.user?.role === 'ADMIN'" class="underline" to="/admin/activity">Admin: Activity</RouterLink>
-          <RouterLink v-if="auth.user?.role === 'ADMIN'" class="underline" to="/admin/reports">Admin: Reports</RouterLink>
-          <RouterLink v-if="auth.user?.role === 'ADMIN'" class="underline" to="/admin/bans">Admin: Bans</RouterLink>
+          <div v-if="auth.user?.role === 'ADMIN'" class="relative">
+            <button @click="adminOpen = !adminOpen" class="underline">Admin ▾</button>
+            <div v-if="adminOpen" class="absolute right-0 mt-2 bg-white border rounded shadow p-2">
+              <RouterLink class="block px-3 py-1 hover:bg-gray-100" to="/admin/technicians">Technicians</RouterLink>
+              <RouterLink class="block px-3 py-1 hover:bg-gray-100" to="/admin/activity">Activity</RouterLink>
+              <RouterLink class="block px-3 py-1 hover:bg-gray-100" to="/admin/reports">Reports</RouterLink>
+              <RouterLink class="block px-3 py-1 hover:bg-gray-100" to="/admin/bans">Bans</RouterLink>
+            </div>
+          </div>
           <RouterLink v-if="auth.user?.role === 'CUSTOMER'" class="underline" to="/my-listings">My Listings</RouterLink>
           <RouterLink v-if="!auth.token" class="underline" to="/login">Login</RouterLink>
           <RouterLink v-if="auth.user?.role === 'TECHNICIAN'" class="underline" to="/favourites">Favourites</RouterLink>
@@ -31,9 +36,10 @@
 </template>
 
 <script setup>
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import { useAuthStore } from "./stores/auth";
 
 const auth = useAuthStore();
+const adminOpen = ref(false);
 onMounted(() => auth.init());
 </script>

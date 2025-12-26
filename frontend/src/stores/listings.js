@@ -169,5 +169,16 @@ export const useListingsStore = defineStore("listings", {
       }
     },
 
+    async createReport(listingId, payload) {
+      this.error = null;
+      try {
+        const res = await api.post(`/listings/${listingId}/report`, payload);
+        return res.data.report;
+      } catch (e) {
+        this.error = e?.response?.data?.error || "Failed to report listing";
+        throw e;
+      }
+    },
+
   },
 });

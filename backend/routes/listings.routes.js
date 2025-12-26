@@ -267,3 +267,70 @@ listingsRouter.get(
     }
   }
 );
+
+// Report a listing (CUSTOMER/TECHNICIAN/ADMIN)
+const createReportSchema = z.object({
+  reason: z.string().min(3).max(1000),
+  includeChat: z.boolean().optional(),
+  reportedId: z.string().optional(),
+});
+
+listingsRouter.post(
+  "/:id/report",
+  requireAuth,
+  requireRole("CUSTOMER", "TECHNICIAN", "ADMIN"),
+  async (req, res, next) => {
+    try {
+      const listingId = req.params.id;
+      const data = createReportSchema.parse(req.body);
+
+      const listing = await prisma.listing.findUnique({ where: { id: listingId }, select: { customerId: true, acceptedTechnicianId: true } });
+      if (!listing) throw httpError(404, "Listing not found");
+
+      // determine who is being reported
+      let reportedId = data.reportedId ?? listing.customerId;
+
+      // basic guard: reporter cannot report themself
+      if (reportedId === req.user.sub) throw httpError(400, "Cannot report yourself");
+
+      if (reportedId !== listing.customerId) {
+        // Reporting a technician — only the listing owner or admin may report a technician
+        if (!(req.user.role === "CUSTOMER" && listing.customerId === req.user.sub) && req.user.role !== "ADMIN") {
+          throw httpError(403, "Only the listing owner or admin can report a technician");
+        }
+
+        // ensure technician is related to the listing (accepted, bid, offer, or chat)
+        const isRelated =
+          reportedId === listing.acceptedTechnicianId ||
+          (await prisma.bid.findFirst({ where: { listingId, technicianId: reportedId }, select: { id: true } })) ||
+          (await prisma.offer.findFirst({ where: { listingId, technicianId: reportedId }, select: { id: true } })) ||
+          (await prisma.chatThread.findFirst({ where: { listingId, technicianId: reportedId }, select: { id: true } }));
+
+        if (!isRelated) throw httpError(400, "Reported technician is not related to this listing");
+
+        const user = await prisma.user.findUnique({ where: { id: reportedId }, select: { role: true } });
+        if (!user || user.role !== "TECHNICIAN") throw httpError(400, "Reported user is not a technician");
+      } else {
+        // Reporting the listing owner
+        // If the reporter is a technician, they can only report the customer if they are the accepted technician
+        if (req.user.role === "TECHNICIAN" && listing.acceptedTechnicianId !== req.user.sub) {
+          throw httpError(403, "Only the accepted technician may report the listing owner");
+        }
+      }
+
+      const report = await prisma.report.create({
+        data: {
+          listingId,
+          reporterId: req.user.sub,
+          reportedId,
+          reason: data.reason,
+          includeChat: !!data.includeChat,
+        },
+      });
+
+      res.status(201).json({ report });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
