@@ -28,7 +28,7 @@
 
         <div class="mt-3 flex gap-3">
           <RouterLink class="underline text-sm" :to="`/listing/${o.listing.id}`">Open listing</RouterLink>
-          <RouterLink class="underline text-sm" :to="`/chat`">Open messages</RouterLink>
+          <button class="border rounded px-3 py-1" @click="openChat(o.listing.id)">Open chat</button>
         </div>
       </div>
 
@@ -40,13 +40,30 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { useTechnicianStore } from "../stores/technician";
+import { useChatStore } from "../stores/chat";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "../stores/auth";
 
 const store = useTechnicianStore();
 const type = ref("current");
+const chat = useChatStore();
+const router = useRouter();
+const auth = useAuthStore();
+
+async function openChat(listingId) {
+  const thread = await chat.findThread(listingId, auth.user.id);
+  if (!thread) {
+    // technician can create thread for themselves
+    const created = await chat.createThread(listingId);
+    router.push(`/chat/${created.id}`);
+    return;
+  }
+  router.push(`/chat/${thread.id}`);
+}
 
 function setType(t) {
   type.value = t;
-  store.fetchJobs(type.value);
+  store.fetchJobs(t);
 }
 
 onMounted(() => store.fetchJobs(type.value));

@@ -35,6 +35,7 @@ app.use("/technician", technicianReviewsRouter);
 app.use("/", offersRouter);
 app.use("/", reviewsRouter);
 
+
 // Central error handler
 app.use((err, req, res, next) => {
   console.error(err);

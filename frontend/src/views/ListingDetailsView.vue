@@ -4,6 +4,7 @@
       <div>
         <h1 class="text-xl font-semibold">{{ listings.detail?.title || "Listing" }}</h1>
         <div class="text-sm text-gray-600">{{ listings.detail?.category }}</div>
+        <div class="text-sm text-gray-600">Status: {{ listings.detail?.status }}<span v-if="listings.detail?.jobDoneAt"> • Done</span></div>
         <div class="text-xs text-gray-500 mt-2">
           Expires: {{ listings.detail ? new Date(listings.detail.expiresAt).toLocaleString() : "" }}
         </div>
@@ -223,8 +224,9 @@ async function toggleFav() {
 }
 
 async function messageTech(technicianId) {
-  const thread = await chat.createThread(listingId, technicianId);
-  router.push(`/chat/${thread.id}?listingId=${listingId}`);
+  let thread = await chat.findThread(listingId, technicianId);
+  if (!thread) thread = await chat.createThread(listingId, technicianId);
+  router.push(`/chat/${thread.id}`);
 }
 
 async function submitOffer() {

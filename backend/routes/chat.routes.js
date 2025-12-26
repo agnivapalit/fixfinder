@@ -13,6 +13,19 @@ function isParticipant(thread, user) {
   return thread.customerId === user.sub || thread.technicianId === user.sub || user.role === "ADMIN";
 }
 
+async function assertTechCanMessageListing({ listingId, techId }) {
+  const listing = await prisma.listing.findUnique({
+    where: { id: listingId },
+    select: { jobDoneAt: true, acceptedTechnicianId: true },
+  });
+  if (!listing) throw httpError(404, "Listing not found");
+
+  if (listing.jobDoneAt) throw httpError(400, "Job is done. Messaging closed.");
+  if (listing.acceptedTechnicianId && listing.acceptedTechnicianId !== techId) {
+    throw httpError(403, "Listing accepted by another technician.");
+  }
+}
+
 // List my threads (inbox)
 chatRouter.get("/threads", async (req, res, next) => {
   try {
@@ -59,6 +72,36 @@ chatRouter.get("/threads", async (req, res, next) => {
   }
 });
 
+chatRouter.get("/thread-by-listing", async (req, res, next) => {
+  try {
+    const listingId = typeof req.query.listingId === "string" ? req.query.listingId : null;
+    const technicianId = typeof req.query.technicianId === "string" ? req.query.technicianId : null;
+
+    if (!listingId || !technicianId) throw httpError(400, "listingId and technicianId required");
+
+    const thread = await prisma.chatThread.findUnique({
+      where: { listingId_technicianId: { listingId, technicianId } },
+      select: { id: true, listingId: true, customerId: true, technicianId: true },
+    });
+
+    if (!thread) return res.json({ thread: null });
+
+    // permission: only participants/admin
+    if (
+      req.user.role !== "ADMIN" &&
+      thread.customerId !== req.user.sub &&
+      thread.technicianId !== req.user.sub
+    ) {
+      throw httpError(403, "Forbidden");
+    }
+
+    res.json({ thread });
+  } catch (err) {
+    next(err);
+  }
+});
+
+
 // Create or get a thread for a listing+technician
 // CUSTOMER: provide listingId + technicianId
 // TECHNICIAN: provide listingId (technicianId inferred)
@@ -69,6 +112,7 @@ chatRouter.post("/threads", async (req, res, next) => {
       technicianId: z.string().min(1).optional(),
     });
     const { listingId, technicianId } = schema.parse(req.body);
+
 
     const listing = await prisma.listing.findUnique({
       where: { id: listingId },
@@ -90,6 +134,9 @@ chatRouter.post("/threads", async (req, res, next) => {
     } else if (req.user.role === "ADMIN") {
       if (!techId) throw httpError(400, "technicianId is required for admin");
     }
+
+    // Ensure the specified technician is allowed to message this listing
+    await assertTechCanMessageListing({ listingId, techId });
 
     const thread = await prisma.chatThread.upsert({
       where: { listingId_technicianId: { listingId, technicianId: techId } },
@@ -153,10 +200,7 @@ chatRouter.post("/threads/:threadId/messages", async (req, res, next) => {
 
     // Technician restrictions
     if (req.user.role === "TECHNICIAN") {
-      if (thread.listing.jobDoneAt) throw httpError(400, "Job is done. Messaging closed.");
-      if (thread.listing.acceptedTechnicianId && thread.listing.acceptedTechnicianId !== req.user.sub) {
-        throw httpError(403, "Listing accepted by another technician.");
-      }
+      await assertTechCanMessageListing({ listingId: thread.listingId, techId: req.user.sub });
     }
 
     const msg = await prisma.message.create({
@@ -181,6 +225,7 @@ chatRouter.post("/threads/:threadId/messages", async (req, res, next) => {
       toEmail: to.email,
       toUserId: to.id,
     });
+
 
     // bump thread updatedAt (so inbox ordering is correct)
     await prisma.chatThread.update({ where: { id: threadId }, data: {} });

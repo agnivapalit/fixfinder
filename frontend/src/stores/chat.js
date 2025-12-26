@@ -41,5 +41,9 @@ export const useChatStore = defineStore("chat", {
       const res = await api.post(`/chat/threads/${threadId}/messages`, { body });
       return res.data.message;
     },
+    async findThread(listingId, technicianId) {
+      const res = await api.get("/chat/thread-by-listing", { params: { listingId, technicianId } });
+      return res.data.thread; // null or {id,...}
+    },
   },
 });
