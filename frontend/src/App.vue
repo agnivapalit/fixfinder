@@ -7,12 +7,16 @@
         <div class="flex items-center gap-3">
           <RouterLink class="underline" to="/dashboard">Dashboard</RouterLink>
           <RouterLink class="underline" to="/browse">Browse</RouterLink>
+          <RouterLink v-if="auth.user?.role === 'ADMIN'" class="underline" to="/admin/technicians">Admin: Technicians</RouterLink>
+          <RouterLink v-if="auth.user?.role === 'ADMIN'" class="underline" to="/admin/activity">Admin: Activity</RouterLink>
+          <RouterLink v-if="auth.user?.role === 'ADMIN'" class="underline" to="/admin/reports">Admin: Reports</RouterLink>
+          <RouterLink v-if="auth.user?.role === 'ADMIN'" class="underline" to="/admin/bans">Admin: Bans</RouterLink>
           <RouterLink v-if="auth.user?.role === 'CUSTOMER'" class="underline" to="/my-listings">My Listings</RouterLink>
           <RouterLink v-if="!auth.token" class="underline" to="/login">Login</RouterLink>
           <RouterLink v-if="auth.user?.role === 'TECHNICIAN'" class="underline" to="/favourites">Favourites</RouterLink>
           <RouterLink v-if="auth.token" class="underline" to="/chat">Messages</RouterLink>
           <RouterLink v-if="auth.user?.role === 'TECHNICIAN'" class="underline" to="/tech/jobs">Jobs</RouterLink>
-          <RouterLink v-if="auth.user?.role === 'TECHNICIAN'" class="underline" to="/tech/reviews">My Reviews</RouterLink>
+          <RouterLink v-if="auth.user?.role === 'TECHNICIAN'" class="underline" to="/tech/reviews">My Reviews</RouterLink> 
 
           <div v-else class="flex items-center gap-2">
             <span class="text-sm text-gray-600">{{ auth.user?.email }}</span>

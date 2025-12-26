@@ -18,6 +18,13 @@ authRouter.post("/signup", async (req, res, next) => {
   try {
     const data = signupSchema.parse(req.body);
 
+    const ban = await prisma.ban.findFirst({
+      where: {
+        OR: [{ email }, { phone }],
+      },
+    });
+    if (ban) throw httpError(403, "Registration blocked");
+
     const passwordHash = await bcrypt.hash(data.password, 10);
 
     const user = await prisma.user.create({
@@ -64,6 +71,13 @@ authRouter.post("/login", async (req, res, next) => {
 
     const ok = await bcrypt.compare(data.password, user.passwordHash);
     if (!ok) return next(httpError(401, "Invalid credentials"));
+
+    const ban = await prisma.ban.findFirst({
+      where: {
+        OR: [{ email: user.email }, { phone: user.phone }],
+      },
+    });
+    if (ban) throw httpError(403, "Account banned");
 
     const token = jwt.sign(
       { sub: user.id, role: user.role },

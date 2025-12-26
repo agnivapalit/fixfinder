@@ -12,6 +12,10 @@ import ChatInboxView from "../views/ChatInboxView.vue";
 import ChatThreadView from "../views/ChatThreadView.vue";
 import TechJobsView from "../views/TechJobsView.vue";
 import TechReviewsView from "../views/TechReviewsView.vue";
+import AdminTechniciansView from "../views/AdminTechniciansView.vue";
+import AdminActivityView from "../views/AdminActivityView.vue";
+import AdminReportsView from "../views/AdminReportsView.vue";
+import AdminBansView from "../views/AdminBansView.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -73,6 +77,27 @@ const router = createRouter({
       path: "/tech/reviews",
       component: TechReviewsView,
       meta: { requiresAuth: true, roles: ["TECHNICIAN"] },
+    },
+    // Admin routes
+    {
+      path: "/admin/technicians",
+      component: AdminTechniciansView,
+      meta: { requiresAuth: true, roles: ["ADMIN"] },
+    },
+    {
+      path: "/admin/activity",
+      component: AdminActivityView,
+      meta: { requiresAuth: true, roles: ["ADMIN"] },
+    },
+    {
+      path: "/admin/reports",
+      component: AdminReportsView,
+      meta: { requiresAuth: true, roles: ["ADMIN"] },
+    },
+    {
+      path: "/admin/bans",
+      component: AdminBansView,
+      meta: { requiresAuth: true, roles: ["ADMIN"] },
     },
   ],
 });
