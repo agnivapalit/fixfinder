@@ -8,7 +8,7 @@
     </div>
 
     <table v-if="reports.length">
-      <thead><tr><th>Listing</th><th>Reporter</th><th>Reported</th><th>Include Chat</th><th>Reason</th><th>When</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Listing</th><th>Reporter</th><th>Reported</th><th>Include Chat</th><th>Reason</th><th>When</th></tr></thead>
       <tbody>
         <template v-for="r in reports" :key="r.id">
           <tr
@@ -25,23 +25,12 @@
               <span v-else class="text-muted">Click to expand</span>
             </td>
             <td>{{ new Date(r.createdAt).toLocaleString() }}</td>
-            <td>
-              <div class="flex gap-2">
-                <template v-if="selectedReportId === r.id">
-                  <button v-if="r.includeChat" class="border rounded px-3 py-1" @click.stop="viewChat(r.id)">View Chat</button>
-                  <button class="border rounded px-3 py-1" @click.stop="deleteListing(r.listingId)" :disabled="loading || !r.listingId">Delete Listing</button>
-                </template>
-                <template v-else>
-                  <span class="text-gray-400">Click to expand</span>
-                </template>
-              </div>
-            </td>
           </tr>
 
           <tr v-if="selectedReportId === r.id" class="expanded-row">
-            <td :colspan="7">
+            <td :colspan="6">
               <div class="expanded-content">
-                <div class="mb-2"><strong>Reason:</strong> {{ r.reason }}</div>
+                <div class="mb-2"><strong>Reason:</strong> <span class="reason-body">{{ r.reason }}</span></div> 
 
                 <div class="mb-3">
                   <button v-if="r.includeChat" class="border rounded px-3 py-1 mr-2" @click.stop="viewChat(r.id)">View Chat</button>
@@ -180,6 +169,7 @@ th, td { text-align: left; border-bottom: 1px solid #eee; padding: 0.5rem; }
 
 .expanded-row td { background-color: #f8fafc; padding-top: 1rem; padding-bottom: 1rem; }
 .expanded-content { max-width: 100%; }
-.reason-inline { display: inline-block; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.expanded-content .reason-body { display: block; max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
+.reason-inline { display: inline-block; max-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 </style>
