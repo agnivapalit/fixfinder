@@ -60,7 +60,7 @@ const route = useRoute();
 const adminOpen = ref(false);
 
 const isAuthPage = computed(() => {
-  return route.path === "/login" || route.path === "/signup";
+  return route.path === "/login" || route.path === "/signup" || route.path === "/";
 });
 
 const handleLogout = async () => {

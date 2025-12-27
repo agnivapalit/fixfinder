@@ -18,11 +18,12 @@ import AdminTechniciansView from "../views/AdminTechniciansView.vue";
 import AdminActivityView from "../views/AdminActivityView.vue";
 import AdminReportsView from "../views/AdminReportsView.vue";
 import AdminBansView from "../views/AdminBansView.vue";
+import LandingView from "../views/LandingView.vue";
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: "/", redirect: "/dashboard" },
+    { path: "/", component: LandingView },
     { path: "/login", component: LoginView },
     { path: "/signup", component: SignupView },
 
@@ -107,6 +108,10 @@ const router = createRouter({
       component: AdminBansView,
       meta: { requiresAuth: true, roles: ["ADMIN"] },
     },
+    {
+      path: "/landing",
+      component: LandingView,
+    }
   ],
 });
 
